@@ -488,7 +488,7 @@ var LangText = {
     t39: "Bestätigen",
     t40: "Netzwerkunterbrechung, bitte überprüfen und später erneut versuchen.",
     t47: "Bitte wählen Sie Ihre Login-Region aus",
-    t48: "Asien-Pazifik",
+    t48: "Global",
     t49: "China",
     t50: "Abmelden",
     t52: "Überspringen",
