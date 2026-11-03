@@ -31,6 +31,25 @@ See the [wiki](doc/Wiki.md) for more information.
 
 build instructions for Windows, macOS, and Linux 
 
+## Optional 3MF sanitization
+
+When opening a 3MF project or importing its settings, choose **Yes** to sanitize
+before loading, **No** to load unchanged, or **Cancel** to stop the import.
+Each file has its own choice. Geometry-only imports, recovery and silent loads
+do not show this prompt.
+
+The two compatibility fixes from [3MF Sanitizer](https://github.com/myles1663/3mf-Sanitizer)
+replace `-1` (including the string `"-1"`) with `0` for
+`raft_first_layer_expansion` and `tree_support_wall_count` in the extracted JSON
+project settings and embedded presets. The original 3MF is not overwritten,
+and G-code is not modified.
+
+## Telegram support
+
+The Telegram button in the top bar (Windows and Linux) and **Help > Telegram
+Support** (all platforms) open [t.me/anycubic](https://t.me/anycubic) in the
+default web browser.
+
 # License
 
 - **AnycubicSlicerNext** is licensed under the GNU Affero General Public License, version 3. AnycubicSlicerNext is based on OrcaSlicer.

@@ -3,6 +3,7 @@ name: Build all
 on:
   push:
     branches:
+     - develop
      - main
      - release/*
     paths:
@@ -17,6 +18,7 @@ on:
 
   pull_request:
     branches:
+     - develop
      - main
      - release/*
     paths:
@@ -55,6 +57,7 @@ jobs:
           # Deprecate 20.04appimage
           # - os: ubuntu-20.04
           - os: ubuntu-24.04
+          - os: ubuntu-26.04
           - os: windows-latest
           - os: macos-14
             arch: arm64

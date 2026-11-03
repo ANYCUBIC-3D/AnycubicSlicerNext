@@ -18,6 +18,16 @@ msgstr ""
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=INTEGER; plural=EXPRESSION;\n"
 
+msgid "Sanitize 3MF"
+msgstr ""
+
+#, boost-format
+msgid ""
+"Do you want to sanitize \"%1%\" before loading it?\n\n"
+"This corrects two incompatible Bambu Lab/MakerWorld settings. The original file will not be modified.\n\n"
+"Choose No to load the file without sanitizing it."
+msgstr ""
+
 msgid "Current AMS humidity"
 msgstr ""
 
@@ -4445,6 +4455,12 @@ msgid "Show the list of the keyboard shortcuts"
 msgstr ""
 
 msgid "Setup Wizard"
+msgstr ""
+
+msgid "Telegram Support"
+msgstr ""
+
+msgid "Open Anycubic on Telegram in your web browser"
 msgstr ""
 
 msgid "Show Configuration Folder"

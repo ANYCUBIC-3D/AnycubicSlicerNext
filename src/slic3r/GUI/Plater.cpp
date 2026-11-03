@@ -3677,6 +3677,28 @@ std::vector<size_t> Plater::priv::load_files(const std::vector<fs::path>& input_
 
     BOOST_LOG_TRIVIAL(info) << __FUNCTION__ << boost::format(": load_model %1%, load_config %2%, input_files size %3%")%load_model %load_config %input_files.size();
 
+    std::vector<bool> sanitize_files(input_files.size(), false);
+    if (load_config && !silence && !(strategy & LoadStrategy::Restore)) {
+        for (size_t i = 0; i < input_files.size(); ++i) {
+            if (!std::regex_match(input_files[i].string(), pattern_3mf))
+                continue;
+
+            MessageDialog sanitize_dialog(
+                q,
+                format_wxstr(_L("Do you want to sanitize \"%1%\" before loading it?\n\n"
+                                "This corrects two incompatible Bambu Lab/MakerWorld settings. The original file will not be modified.\n\n"
+                                "Choose No to load the file without sanitizing it."),
+                             input_files[i].filename().string()),
+                _L("Sanitize 3MF"), wxYES_NO | wxCANCEL | wxICON_QUESTION);
+            sanitize_dialog.SetButtonLabel(wxID_NO, _L("No"), true);
+            sanitize_dialog.SetEscapeId(wxID_CANCEL);
+            const int answer = sanitize_dialog.ShowModal();
+            if (answer != wxID_YES && answer != wxID_NO)
+                return empty_result;
+            sanitize_files[i] = answer == wxID_YES;
+        }
+    }
+
     const auto loading = _L("Loading") + dots;
     ProgressDialog dlg(loading, "", 100, find_toplevel_parent(q), wxPD_AUTO_HIDE | wxPD_CAN_ABORT | wxPD_APP_MODAL);
     wxBusyCursor busy;
@@ -3734,6 +3756,7 @@ std::vector<size_t> Plater::priv::load_files(const std::vector<fs::path>& input_
 #endif // _WIN32
         const auto filename         = path.filename();
         int  progress_percent = static_cast<int>(100.0f * static_cast<float>(i) / static_cast<float>(input_files.size()));
+        const bool sanitize_file    = sanitize_files[i];
         const auto real_filename    = (strategy & LoadStrategy::Restore) ? input_files[++i].filename() : filename;
         const auto dlg_info         = _L("Loading file") + ": " + from_path(real_filename);
         BOOST_LOG_TRIVIAL(trace) << __FUNCTION__ << boost::format(": load file %1%") % filename;
@@ -3767,9 +3790,10 @@ std::vector<size_t> Plater::priv::load_files(const std::vector<fs::path>& input_
                     En3mfType                 en_3mf_file_type = En3mfType::From_BBS;
                     ConfigSubstitutionContext config_substitutions{ForwardCompatibilitySubstitutionRule::Enable};
                     std::vector<Preset *>     project_presets;
+                    const LoadStrategy import_strategy = sanitize_file ? strategy | LoadStrategy::SanitizeConfig : strategy;
                     // BBS: backup & restore
                     q->skip_thumbnail_invalid = true;
-                    model = Slic3r::Model::read_from_archive(path.string(), &config_loaded, &config_substitutions, en_3mf_file_type, strategy, &plate_data, &project_presets,
+                    model = Slic3r::Model::read_from_archive(path.string(), &config_loaded, &config_substitutions, en_3mf_file_type, import_strategy, &plate_data, &project_presets,
                                                              &file_version,
                                                              [this, &dlg, real_filename, &progress_percent, &file_percent, stage_percent, INPUT_FILES_RATIO, total_files, i,
                                                               &is_user_cancel](int import_stage, int current, int total, bool &cancel) {

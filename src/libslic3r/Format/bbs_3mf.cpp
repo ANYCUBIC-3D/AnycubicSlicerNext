@@ -181,6 +181,66 @@ const std::string PROJECT_EMBEDDED_FILAMENT_PRESETS_FILE = "Metadata/filament_se
 const std::string PROJECT_EMBEDDED_PRINTER_PRESETS_FILE = "Metadata/machine_settings_";
 const std::string CUT_INFORMATION_FILE = "Metadata/cut_information.xml";
 
+namespace {
+
+size_t sanitize_makerworld_3mf_settings(nlohmann::json &settings)
+{
+    const auto sanitize = [](auto &&self, nlohmann::json &value) -> size_t {
+        size_t fixes = 0;
+        if (value.is_object()) {
+            for (auto it = value.begin(); it != value.end(); ++it) {
+                if (it.key() == "raft_first_layer_expansion" || it.key() == "tree_support_wall_count") {
+                    if ((it.value().is_number() && it.value() == -1) ||
+                        (it.value().is_string() && it.value().get<std::string>() == "-1")) {
+                        // The native config loader expects scalar option values as JSON strings.
+                        it.value() = "0";
+                        ++fixes;
+                    }
+                } else {
+                    fixes += self(self, it.value());
+                }
+            }
+        } else if (value.is_array()) {
+            for (nlohmann::json &item : value)
+                fixes += self(self, item);
+        }
+        return fixes;
+    };
+
+    return sanitize(sanitize, settings);
+}
+
+size_t sanitize_makerworld_3mf_settings_file(const std::string &path)
+{
+    boost::nowide::ifstream input(path, std::ios::binary);
+    if (!input)
+        throw Slic3r::FileIOError("Failed to read 3MF settings for sanitization");
+
+    nlohmann::json settings;
+    try {
+        input >> settings;
+    } catch (const nlohmann::json::parse_error &error) {
+        throw Slic3r::FileIOError(std::string("Failed to sanitize invalid 3MF settings: ") + error.what());
+    }
+    input.close();
+
+    const size_t fixes = sanitize_makerworld_3mf_settings(settings);
+    if (fixes == 0)
+        return 0;
+
+    boost::nowide::ofstream output(path, std::ios::binary | std::ios::trunc);
+    if (!output)
+        throw std::runtime_error("Failed to write sanitized 3MF settings");
+    output << settings.dump(4);
+    output.flush();
+    if (!output)
+        throw std::runtime_error("Failed to write sanitized 3MF settings");
+
+    return fixes;
+}
+
+} // namespace
+
 const unsigned int AUXILIARY_STR_LEN = 12;
 const unsigned int METADATA_STR_LEN = 9;
 
@@ -968,6 +1028,7 @@ void PlateData::parse_filament_info(GCodeProcessorResult *result)
         bool m_load_model = false;
         bool m_load_aux = false;
         bool m_load_config = false;
+        bool m_sanitize_config = false;
         // backup & restore
         bool m_load_restore = false;
         std::string m_backup_path;
@@ -1265,6 +1326,7 @@ void PlateData::parse_filament_info(GCodeProcessorResult *result)
         m_load_aux = strategy & LoadStrategy::LoadAuxiliary;
         m_load_restore = strategy & LoadStrategy::Restore;
         m_load_config = strategy & LoadStrategy::LoadConfig;
+        m_sanitize_config = m_load_config && !m_load_restore && (strategy & LoadStrategy::SanitizeConfig);
         m_model = &model;
         m_unit_factor = 1.0f;
         m_curr_object = nullptr;
@@ -2494,6 +2556,12 @@ void PlateData::parse_filament_info(GCodeProcessorResult *result)
                 add_error("Error while extract project config file to file");
                 return;
             }
+            if (m_sanitize_config) {
+                const size_t sanitized_settings = sanitize_makerworld_3mf_settings_file(dest_file);
+                if (sanitized_settings > 0) {
+                    BOOST_LOG_TRIVIAL(info) << "Sanitized " << sanitized_settings << " invalid setting(s) in imported 3MF project settings";
+                }
+            }
             std::map<std::string, std::string> key_values;
             std::string reason;
             int ret = config.load_from_json(dest_file, config_substitutions, true, key_values, reason);
@@ -2522,6 +2590,12 @@ void PlateData::parse_filament_info(GCodeProcessorResult *result)
             if (res == 0) {
                 add_error("Error while extract auxiliary file to file");
                 return;
+            }
+            if (m_sanitize_config && use_json) {
+                const size_t sanitized_settings = sanitize_makerworld_3mf_settings_file(dest_file);
+                if (sanitized_settings > 0) {
+                    BOOST_LOG_TRIVIAL(info) << "Sanitized " << sanitized_settings << " invalid setting(s) in imported 3MF embedded preset";
+                }
             }
             //load presets
             DynamicPrintConfig config;
