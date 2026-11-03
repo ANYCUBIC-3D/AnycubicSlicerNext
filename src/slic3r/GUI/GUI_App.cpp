@@ -7006,6 +7006,13 @@ bool GUI_App::open_browser_with_warning_dialog(const wxString& url, int flags/* 
     return wxLaunchDefaultBrowser(url, flags);
 }
 
+void GUI_App::open_telegram_support()
+{
+    const wxString url = "https://t.me/anycubic";
+    if (!wxLaunchDefaultBrowser(url, wxBROWSER_NEW_WINDOW))
+        BOOST_LOG_TRIVIAL(error) << "Failed to open Telegram support URL: " << url.ToUTF8().data();
+}
+
 // static method accepting a wxWindow object as first parameter
 // void warning_catcher{
 //     my($self, $message_dialog) = @_;

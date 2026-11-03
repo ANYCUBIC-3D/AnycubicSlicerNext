@@ -28,6 +28,7 @@ enum CUSTOM_ID
     ID_MODEL_STORE,
     ID_PUBLISH,
     ID_CALIB,
+    ID_TELEGRAM,
     ID_TOOL_BAR = 3200,
     ID_AMS_NOTEBOOK,
 };
@@ -277,6 +278,11 @@ void BBLTopbar::Init(wxFrame* parent)
     //this->AddSeparator();
     this->AddSpacer(FromDIP(4));
 
+    wxBitmap telegram_bitmap = create_scaled_bitmap("topbar_telegram", nullptr, TOPBAR_ICON_SIZE);
+    this->AddTool(ID_TELEGRAM, "", telegram_bitmap, _L("Telegram Support"));
+
+    this->AddSpacer(FromDIP(12));
+
     wxBitmap iconize_bitmap = create_scaled_bitmap("topbar_min", nullptr, TOPBAR_ICON_SIZE);
     wxAuiToolBarItem* iconize_btn = this->AddTool(wxID_ICONIZE_FRAME, "", iconize_bitmap);
 
@@ -321,6 +327,7 @@ void BBLTopbar::Init(wxFrame* parent)
     this->Bind(wxEVT_AUITOOLBAR_TOOL_DROPDOWN, &BBLTopbar::OnUndo, this, wxID_UNDO);
     //this->Bind(wxEVT_AUITOOLBAR_TOOL_DROPDOWN, &BBLTopbar::OnModelStoreClicked, this, ID_MODEL_STORE);
     this->Bind(wxEVT_AUITOOLBAR_TOOL_DROPDOWN, &BBLTopbar::OnPublishClicked, this, ID_PUBLISH);
+    this->Bind(wxEVT_TOOL, [this](wxCommandEvent&) { wxGetApp().open_telegram_support(); }, ID_TELEGRAM);
 }
 
 BBLTopbar::~BBLTopbar()
@@ -505,6 +512,9 @@ void BBLTopbar::Rescale() {
     /*item = this->FindTool(ID_MODEL_STORE);
     item->SetBitmap(create_scaled_bitmap("topbar_store", this, TOPBAR_ICON_SIZE));
     */
+
+    item = this->FindTool(ID_TELEGRAM);
+    item->SetBitmap(create_scaled_bitmap("topbar_telegram", this, TOPBAR_ICON_SIZE));
 
     item = this->FindTool(wxID_ICONIZE_FRAME);
     item->SetBitmap(create_scaled_bitmap("topbar_min", this, TOPBAR_ICON_SIZE));

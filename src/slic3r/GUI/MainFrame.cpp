@@ -2228,6 +2228,8 @@ static wxMenu* generate_help_menu()
         [](wxCommandEvent&) { wxGetApp().keyboard_shortcuts(); });
     // Show Beginner's Tutorial
     append_menu_item(helpMenu, wxID_ANY, _L("Setup Wizard"), _L("Setup Wizard"), [](wxCommandEvent &) {wxGetApp().ShowUserGuide();});
+    append_menu_item(helpMenu, wxID_ANY, _L("Telegram Support"), _L("Open Anycubic on Telegram in your web browser"),
+        [](wxCommandEvent &) { wxGetApp().open_telegram_support(); });
 
     helpMenu->AppendSeparator();
     // Open Config Folder
